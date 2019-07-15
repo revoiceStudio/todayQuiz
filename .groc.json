@@ -1,0 +1,10 @@
+{
+    "glob": [
+      "./*.js", 
+      "lib/*.js"
+    ],
+    "except": [
+    ],
+    "github": false,
+    "out": "./docs/groc"
+  }
