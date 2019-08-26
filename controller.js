@@ -92,6 +92,7 @@ exports.answerQuiz = async function(req,res){
     const param = req.body.action.parameters["userAnswer"]
     const responseObj = JSON.parse(process.env.response)
     const directives = responseObj.directives[0]
+    let percentage = ""
     const answer_ment = {}
     //계정 연동이 안된 경우
     if(res["accessToken"] == 'undefined'){
@@ -120,7 +121,9 @@ exports.answerQuiz = async function(req,res){
                 if(param.value == QUIZ['CORRECT']){
                     correct = "정답입니다." 
                     if(user["today_state"]==1 && user["ad_state"]==0){
-                        QUIZ["COMMENTARY"] += " "+global.percentage +"퍼센트의 사람들이 정답을 맞췄습니다."
+                        percentage = global.percentage +"퍼센트의 사람들이 정답을 맞췄습니다."
+                        console.log("퍼센트지 이따구로 옴 !!!!!!!!!!!!!!! ")
+                        console.log(percentage)
                         directives.audioItem.stream["token"] = "bonusevent_sound"
                         directives.audioItem.stream["url"] = process.env.bonusEventSound
                         db.update('today_answer='+ param.value +',answer_state=0,today_state=2,user_point='+( user["user_point"] + Number(QUIZ["POINT"]) ),res["Oauth"].id)
@@ -158,7 +161,7 @@ exports.answerQuiz = async function(req,res){
                     }
 
                     if(user["today_state"]==1 && user["ad_state"]==0){
-                        QUIZ["COMMENTARY"] += " "+global.percentage +"퍼센트의 사람들이 정답을 맞췄습니다."
+                        percentage = global.percentage +"퍼센트의 사람들이 정답을 맞췄습니다."
                         db.update('today_answer='+ param.value +',answer_state=0',res["Oauth"].id)
                     }
                     else if(user["bonus_state"]==1 && user["ad_state"]==0){
@@ -175,11 +178,12 @@ exports.answerQuiz = async function(req,res){
                 logger.log('answerQuiz parameters are undefined')
             }
             
-            answer_ment["nugu_answerment"] = correct + QUIZ["COMMENTARY"]
+            answer_ment["nugu_answerment"] = correct + QUIZ["COMMENTARY"] + " " + percentage
         }
     }
     responseObj.directives[0] = directives
     responseObj["output"] = answer_ment
+    console.log(responseObj['output'])
     logger.log("response-answerQuiz"+responseObj["output"])
     return res.json(responseObj)
 }
@@ -234,7 +238,7 @@ exports.finishSound = function(req,res){
     const finished_ment = {}
     
     //responseObj["directives"] = []
-    finished_ment["finished_ment"] =  "오늘 푸실수 있는 모든 퀴즈를 푸셨어요! 내일까지 다시 퀴즈를 준비해놓을게요." 
+    finished_ment["finished_ment"] =  "오늘 푸실수 있는 모든 퀴즈를 푸셨어요! 내일까지 다시 퀴즈를 준비해놓을게요. 오늘의 퀴즈를 종료할게요." 
     responseObj["output"] = finished_ment
     logger.log("response-finishSound"+responseObj["output"])
     return res.json(responseObj)
@@ -246,6 +250,12 @@ exports.default_finished  = function(req, res){
 exports.health = function(req, res){
     logger.log("request health")
     return res.json({"status":"OK"})
+}
+exports.askPoint = async function(req, res){
+    const responseObj = JSON.parse(process.env.response)
+    const result = await db.selectById("user_point",res["Oauth"].id)
+    responseObj['output'] = {"point": "당신의 포인트는 "+result.user_point + "점 입니다."}
+    return res.json(responseObj)
 }
 
 function getBonusQuiz(bonus_no){
