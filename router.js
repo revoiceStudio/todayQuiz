@@ -12,5 +12,5 @@ router.post('/adevent_sound',controller.adeventSound)
 router.post('/finish_sound',controller.finishSound)
 router.post('/default_finished',controller.default_finished)
 router.get('/health',controller.health)
-
+router.post('/askPoint',controller.askPoint)
 module.exports = router

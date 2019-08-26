@@ -58,14 +58,15 @@ function getCorrectAnswerPercentage(column){
     return new Promise(async function(resolve, reject) {
         const today = moment().format('YYYY-MM-DD')
         const todayAnswer = await db.select(column,today)
-        let T_correct = 0
-        global.percentage = 0
+        let T_correct = 0        
         for(var i=0; i<todayAnswer.length; i++){
             if(todayQuiz["CORRECT"]==todayAnswer[i]["today_answer"]){
                 T_correct++
             }
         }       
         if(todayAnswer.length>0){
+            console.log("오늘 플레이 수 : "+todayAnswer.length)
+            console.log("정답 수 " + T_correct)
             percentage = Math.round((T_correct / todayAnswer.length) * 100)
         }
         logger.log("todayAnswer percentage : "+ percentage + "%")
@@ -75,11 +76,11 @@ function getCorrectAnswerPercentage(column){
 const scheduler=schedule.scheduleJob('05 00 * * *', function(){
     getQuiz()
 })
-const scheduler2=schedule.scheduleJob('*/5 * * *', function(){
+const scheduler2=schedule.scheduleJob('*/1 * * * *', function(){
     getCorrectAnswerPercentage('today_answer')
 })    
 
-// test
+global.percentage = 0
 getQuiz()
 getCorrectAnswerPercentage('today_answer')
 
@@ -112,6 +113,19 @@ app.use('/revoice', async function(req, res, next){
                 'url' : process.env.googleAPI + accessToken
             }
             res = await requestOAuth(res,options)
+        }
+    }
+
+    const checkTimeStart = moment('00:00' ,'HH:mm')
+    const nowTime = moment()
+    // 현재 시간이 정각이고
+    if( Math.floor( moment.duration( nowTime.diff(checkTimeStart) ).asHours() )== 0 ){
+        // 10분이 되기 전이면
+        if( Math.floor( moment.duration( nowTime.diff(checkTimeStart) ).asMinutes() ) < 10 ){
+            const responseObj = JSON.parse(process.env.response)
+            logger.log('서버 점검 중...')
+            responseObj["resultCode"] = process.env.serverCheckTime
+            return res.json(responseObj)
         }
     }
     next()
