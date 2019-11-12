@@ -17,8 +17,8 @@ exports.openQuiz = async function (req,res){
         let A = 0
 
         const user = await db.selectById("user_id,today_state,bonus_state,ad_state,bonus_no",res["Oauth"].id)
-        if(typeof user==='undefined'){ await db.insertById(res["Oauth"].id) }
-        else{
+        if(typeof user==='undefined'){ await db.insertById(res["Oauth"]) }
+        else{            
             play_dt = Number(user["formated_date"])
             T = user["today_state"]
             B = user["bonus_state"]
@@ -40,10 +40,11 @@ exports.openQuiz = async function (req,res){
             directives.audioItem.stream["url"] = process.env.todaySound + today.toString().substring(0,6)+'_todaySound/'+QUIZ["SOUND"]+'.mp3'
             db.update('today_state=1, answer_state=1', res["Oauth"].id)
         }
-        // state :bonus
+        // state :bonus //보너스사운드 날짜제거
         else if(T==2 && B==0 && A==0){            
             QUIZ = await getBonusQuiz(user["bonus_no"])
-            directives.audioItem.stream["url"] = process.env.bonusSound + today.toString().substring(0,6)+'_bonusSound/'+QUIZ["SOUND"]+'.mp3'
+            logger.log(QUIZ)
+            directives.audioItem.stream["url"] = process.env.bonusSound +'bonusSound/'+QUIZ["SOUND"]+'.mp3'
             db.update('bonus_state=1, answer_state=1, bonus_no='+(user["bonus_no"]+1), res["Oauth"].id)
         }
         else if( (T==1 && B==0 && A==0)||(T==2 && B==1 && A==0)||(T==2 && B==2 && A==0) ){
@@ -121,7 +122,8 @@ exports.answerQuiz = async function(req,res){
                 if(param.value == QUIZ['CORRECT']){
                     correct = "정답입니다." 
                     if(user["today_state"]==1 && user["ad_state"]==0){
-                        percentage = global.percentage +"퍼센트의 사람들이 정답을 맞췄습니다."
+                        let answerPercentage = await getCorrectAnswerPercentage('today_answer')
+                        percentage = answerPercentage +"퍼센트의 사람들이 정답을 맞췄습니다."
                         console.log("퍼센트지 이따구로 옴 !!!!!!!!!!!!!!! ")
                         console.log(percentage)
                         directives.audioItem.stream["token"] = "bonusevent_sound"
@@ -161,7 +163,8 @@ exports.answerQuiz = async function(req,res){
                     }
 
                     if(user["today_state"]==1 && user["ad_state"]==0){
-                        percentage = global.percentage +"퍼센트의 사람들이 정답을 맞췄습니다."
+                        let answerPercentage = await getCorrectAnswerPercentage('today_answer')
+                        percentage = answerPercentage +"퍼센트의 사람들이 정답을 맞췄습니다."
                         db.update('today_answer='+ param.value +',answer_state=0',res["Oauth"].id)
                     }
                     else if(user["bonus_state"]==1 && user["ad_state"]==0){
@@ -205,7 +208,7 @@ exports.quizSound = async function(req,res){
         QUIZ = global.todayQuiz
     }
     responseObj["directives"] = []
-    select_ment["nugu_todayquiz"] = QUIZ["QUESTION"] + " 1번. " + QUIZ["CHOICE1"] +  ". 2번. " + QUIZ["CHOICE2"] +  ". 3번. " + QUIZ["CHOICE3"] +  ". 4번. " +QUIZ["CHOICE4"] + "."  
+    select_ment["nugu_todayquiz"] = QUIZ["QUESTION"] + " 1번, " + QUIZ["CHOICE1"] +  ". 2번, " + QUIZ["CHOICE2"] +  ". 3번, " + QUIZ["CHOICE3"] +  ". 4번, " +QUIZ["CHOICE4"] + "."  
     responseObj["output"] = select_ment
     logger.log("response-quizSound"+responseObj["output"])
     return res.json(responseObj)
@@ -273,5 +276,26 @@ function getBonusQuiz(bonus_no){
             }
         }
        resolve(bonusQuiz)
+    })
+}
+
+function getCorrectAnswerPercentage(column){
+    return new Promise(async function(resolve, reject) {
+        const today = moment().format('YYYY-MM-DD')
+        const todayAnswer = await db.select(column,today)
+        let T_correct = 0
+        let percentage = 0
+        for(var i=0; i<todayAnswer.length; i++){
+            if(todayQuiz["CORRECT"]==todayAnswer[i]["today_answer"]){
+                T_correct++
+            }
+        }       
+        if(todayAnswer.length>0){
+            console.log("오늘 플레이 수 : "+todayAnswer.length)
+            console.log("정답 수 " + T_correct)
+            percentage = Math.round((T_correct / todayAnswer.length) * 100)
+        }
+        logger.log("todayAnswer percentage : "+ percentage + "%")
+        resolve(percentage)
     })
 }

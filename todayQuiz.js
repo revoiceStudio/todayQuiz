@@ -58,7 +58,8 @@ function getCorrectAnswerPercentage(column){
     return new Promise(async function(resolve, reject) {
         const today = moment().format('YYYY-MM-DD')
         const todayAnswer = await db.select(column,today)
-        let T_correct = 0        
+        let T_correct = 0
+        let percentage = 0
         for(var i=0; i<todayAnswer.length; i++){
             if(todayQuiz["CORRECT"]==todayAnswer[i]["today_answer"]){
                 T_correct++
@@ -76,13 +77,20 @@ function getCorrectAnswerPercentage(column){
 const scheduler=schedule.scheduleJob('05 00 * * *', function(){
     getQuiz()
 })
-const scheduler2=schedule.scheduleJob('*/1 * * * *', function(){
-    getCorrectAnswerPercentage('today_answer')
-})    
 
-global.percentage = 0
+//const scheduler2=schedule.scheduleJob('*/1 * * * *', function(){
+//    getCorrectAnswerPercentage('today_answer')
+//})    
+
+//global.percentage = 0
 getQuiz()
-getCorrectAnswerPercentage('today_answer')
+//getCorrectAnswerPercentage('today_answer')
+
+app.use('/revoice/health', (req, res)=>{
+    console.log('health request : ', req.headers)
+    res.status(200);
+    return res.send("OK")
+})
 
 // * OAuth 요청을 보낸다.
 function requestOAuth(res,options){
@@ -91,7 +99,7 @@ function requestOAuth(res,options){
             if (error) throw error
             logger.log("OAuth 인증 완료.")
             res["Oauth"] = JSON.parse(body)
-            logger.log(res["Oauth"].id)            
+            logger.log(res["Oauth"])            
             resolve(res)
         })
     })
