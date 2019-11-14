@@ -110,19 +110,35 @@ app.use('/revoice', async function(req, res, next){
     const jsonObj = req.body
     logger.log(jsonObj)
     logger.log('OAuth 토큰 확인...')
-    if(typeof jsonObj.context !== "undefined" ){      
-        if(typeof jsonObj.context.session["accessToken"] === 'undefined'){
-            logger.log("OAuth 연동 안됨.")
-            res["accessToken"] = 'undefined'
+    // Nugu request
+    if(jsonObj.context){
+        const authorization = req.headers.authorization.split(" ")[1]
+        console.log(authorization)
+        if(authorization != process.env.APIKEY){
+            console.log('authorization failed')
+            res.status(401);
+            return res.send('authorization failed')
         }
-        else{
-            const accessToken = jsonObj.context.session["accessToken"]
-            const options = {
-                'url' : process.env.googleAPI + accessToken
+        console.log(jsonObj.action["actionName"])
+        // If accessToken is undefined   
+        if(typeof jsonObj.context !== "undefined" ){      
+            if(typeof jsonObj.context.session["accessToken"] === 'undefined'){
+                logger.log("OAuth 연동 안됨.")
+                res["accessToken"] = 'undefined'
             }
-            res = await requestOAuth(res,options)
+            else{
+                const accessToken = jsonObj.context.session["accessToken"]
+                const options = {
+                    'url' : process.env.googleAPI + accessToken
+                }
+                res = await requestOAuth(res,options)
+            }
         }
-    }
+    }else{
+        console.log('bad request')
+        res.status(404);
+        return res.send('bad request')
+    }           
 
     const checkTimeStart = moment('00:00' ,'HH:mm')
     const nowTime = moment()
