@@ -1,6 +1,6 @@
-db.js
-# directory 
 /node_modules
+.*.json
 /docs
 /log
 *.env
+

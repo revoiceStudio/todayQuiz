@@ -10,6 +10,7 @@ exports.commonStart = async function (req,res){
     let QUIZ = {}
     let open_ment = {}
     // Oauth is linked
+    let username = ""
     if(res["accessToken"] != 'undefined'){        
         let play_dt = today
         let T = 0
@@ -36,6 +37,7 @@ exports.commonStart = async function (req,res){
         }
         // state :today
         if(T==0 && B==0 && A==0){
+            username = "안녕하세요! " + res["Oauth"].name + "님? "
             QUIZ = global.todayQuiz            
             directives.audioItem.stream["url"] = process.env.todaySound + today.toString().substring(0,6)+'_todaySound/'+QUIZ["SOUND"]+'.mp3'
             db.update('today_state=1, answer_state=1', res["Oauth"].id)
@@ -80,8 +82,9 @@ exports.commonStart = async function (req,res){
         QUIZ = global.todayQuiz
         directives.audioItem.stream["url"] = process.env.todaySound + today.toString().substring(0,6)+'_todaySound/'+QUIZ["SOUND"]+'.mp3'
     }
+
     if(typeof QUIZ["SOUND_COMMENT"]==="undefined"){ QUIZ["SOUND_COMMENT"]="" }
-    open_ment = { "nugu_common_openment": QUIZ["OPENMENT"] +", "+QUIZ["POINT"]+"포인트의 퀴즈에요. "+QUIZ["SOUND_COMMENT"]}
+    open_ment = { "nugu_common_openment": username + QUIZ["OPENMENT"] +", "+QUIZ["POINT"]+"포인트의 퀴즈에요. "+QUIZ["SOUND_COMMENT"]}
     directives.audioItem.stream["token"] = "quiz_sound"
     responseObj.directives[0] = directives
     responseObj["output"] = open_ment
@@ -96,6 +99,7 @@ exports.openQuiz = async function (req,res){
     let QUIZ = {}
     let open_ment = {}
     // Oauth is linked
+    let username = ""
     if(res["accessToken"] != 'undefined'){        
         let play_dt = today
         let T = 0
@@ -122,6 +126,7 @@ exports.openQuiz = async function (req,res){
         }
         // state :today
         if(T==0 && B==0 && A==0){
+            username = "안녕하세요! " + res["Oauth"].name + "님? "
             QUIZ = global.todayQuiz            
             directives.audioItem.stream["url"] = process.env.todaySound + today.toString().substring(0,6)+'_todaySound/'+QUIZ["SOUND"]+'.mp3'
             db.update('today_state=1, answer_state=1', res["Oauth"].id)
@@ -167,7 +172,7 @@ exports.openQuiz = async function (req,res){
         directives.audioItem.stream["url"] = process.env.todaySound + today.toString().substring(0,6)+'_todaySound/'+QUIZ["SOUND"]+'.mp3'
     }
     if(typeof QUIZ["SOUND_COMMENT"]==="undefined"){ QUIZ["SOUND_COMMENT"]="" }
-    open_ment = { "nugu_openment": QUIZ["OPENMENT"] +", "+QUIZ["POINT"]+"포인트의 퀴즈에요. "+QUIZ["SOUND_COMMENT"]}
+    open_ment = { "nugu_openment": username + QUIZ["OPENMENT"] +", "+QUIZ["POINT"]+"포인트의 퀴즈에요. "+QUIZ["SOUND_COMMENT"]}
     directives.audioItem.stream["token"] = "quiz_sound"
     responseObj.directives[0] = directives
     responseObj["output"] = open_ment
